@@ -109,7 +109,7 @@ html{scroll-behavior:smooth;scroll-padding-top:100px}body{background:var(--app-b
 #portalHome{display:none;min-height:100vh;background:#f5f8fc;color:#15283d;font-family:Inter,Segoe UI,Arial,sans-serif}
 .portal-nav{height:auto;min-height:70px;background:#fff;border-bottom:1px solid #dce5f0;display:flex;align-items:center;justify-content:space-between;gap:18px;padding:14px clamp(16px,4vw,56px);position:sticky;top:0;z-index:30;flex-wrap:wrap}
 .portal-logo{display:flex;align-items:center;gap:10px;color:#123d70;font-weight:800;font-size:20px}.portal-mark{width:42px;height:42px;border-radius:12px;background:linear-gradient(135deg,#123d70,#3678e8);display:grid;place-items:center;color:#fff;font-weight:900;box-shadow:0 6px 15px #123d7030}
-.portal-links{display:flex;gap:7px;align-items:center;flex-wrap:wrap}.portal-links a{color:#334155;text-decoration:none;padding:10px 11px;border-radius:8px;font-weight:700;font-size:13px}.portal-links a:hover{background:#edf4ff;color:#174b91}.portal-links .portal-login-btn{background:#123d70;color:white}
+.portal-links{display:flex;gap:7px;align-items:center;flex-wrap:wrap}.portal-links a{color:#334155;text-decoration:none;padding:10px 11px;border-radius:8px;font-weight:700;font-size:13px}.portal-links a:hover{background:#edf4ff;color:#174b91}.portal-links .portal-login-btn{background:#123d70;color:white}\n#googleSignInContainer{display:flex;align-items:center;min-height:40px}#googleSignInStatus{flex-basis:100%;padding-left:4px}
 .portal-menu-dropdown{position:relative;display:inline-flex;align-items:center}
 .portal-menu-dropdown>button{border:0;background:transparent;color:#334155;padding:10px 11px;border-radius:8px;font:inherit;font-size:13px;font-weight:700;cursor:pointer}
 .portal-menu-dropdown>button:hover,.portal-menu-dropdown:focus-within>button{background:#edf4ff;color:#174b91}
@@ -148,6 +148,8 @@ body.demo-mode #billPanel::after,body.demo-mode #claimPage2::after,body.demo-mod
       <a href="#portalAbout">ABOUT US</a>
       <div class="portal-menu-dropdown" id="portalServicesMenu"><button type="button" aria-haspopup="true" aria-expanded="false">SERVICES <span aria-hidden="true">▾</span></button><div class="portal-submenu"><a href="#portalPricing">Paid Software</a><a href="#portalDemo">Demo Software</a></div></div>
       <a href="#portalContact">CONTACT US</a>
+      <div id="googleSignInContainer" aria-label="Google sign in"></div>
+      <span id="googleSignInStatus" role="status" aria-live="polite" style="font-size:12px;color:#64748b;max-width:260px"></span>
     </nav>
   </header>
   <section class="portal-hero" id="portalTop"><div class="portal-container portal-hero-grid"><div><span class="portal-eyebrow">OFFICIALPEN · SMART OFFICE TOOLS</span><h1>Work smarter.<br>Keep your office work simple.</h1><p>Welcome to OfficialPen — a growing suite of practical digital tools for official forms, travel claims, tour diaries and document workflows.</p><div class="portal-hero-actions"><a class="portal-btn ghost" href="#portalDemo">Try Demo</a></div></div></div></section>
@@ -594,4 +596,105 @@ function resetForm(){if(!window.confirm('Reset the entire TA Bill and Tour Diary
  document.addEventListener('click',function(e){if(!document.body.classList.contains('demo-mode'))return;const target=e.target.closest('.print-form,#sendEmailPdf');if(target){e.preventDefault();e.stopImmediatePropagation();demoLimitPopup(target.id==='sendEmailPdf'?'Email PDF is available only in the paid version.':'Print and PDF export are available only in the paid version.');}},true);
  const actions=document.querySelector('.top .actions');if(actions){const back=document.createElement('button');back.type='button';back.id='backToOfficialPenHome';back.className='secondary';back.textContent='← Back to OfficialPen Home';back.addEventListener('click',showPortal);actions.appendChild(back);const logout=document.createElement('button');logout.type='button';logout.id='logoutButton';logout.textContent='Back to Home';logout.addEventListener('click',showPortal);actions.appendChild(logout);}
  showPortal();
-})();</script></body></html>
+})();</script>
+<script>
+const OFFICIALPEN_GOOGLE_CLIENT_ID = "425399316877-lale1gfa7dcprgvbvbcbqa219es69a5m.apps.googleusercontent.com";
+const OFFICIALPEN_AUTH_API = "https://officialpen-payment-api.thakursatyaraj1996.workers.dev/auth/google";
+
+function initializeOfficialPenGoogleSignIn() {
+  const container = document.getElementById("googleSignInContainer");
+  const status = document.getElementById("googleSignInStatus");
+  if (!container || !status) return;
+
+  // Google OAuth web sign-in must run from an authorized HTTPS origin, not file://.
+  if (window.location.protocol === "file:") {
+    container.innerHTML = "";
+    status.textContent = "Google Sign-In needs the published HTTPS website. Upload this file as index.html to GitHub Pages, then sign in there.";
+    status.style.color = "#92400e";
+    return;
+  }
+
+  if (window.location.origin !== "https://thakursatyaraj1996-lang.github.io") {
+    container.innerHTML = "";
+    status.textContent = "Open OfficialPen from its authorized GitHub Pages address to use Google Sign-In.";
+    status.style.color = "#92400e";
+    return;
+  }
+
+  if (!window.google || !google.accounts || !google.accounts.id) {
+    status.textContent = "Google Sign-In is still loading. Refresh the page in a moment.";
+    return;
+  }
+
+  google.accounts.id.initialize({
+    client_id: OFFICIALPEN_GOOGLE_CLIENT_ID,
+    callback: async function(response) {
+      if (!response || !response.credential) {
+        status.textContent = "Google did not return a sign-in credential. Please try again.";
+        return;
+      }
+
+      status.style.color = "#64748b";
+      status.textContent = "Verifying Google account…";
+      try {
+        const result = await fetch(OFFICIALPEN_AUTH_API, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ credential: response.credential })
+        });
+        const data = await result.json().catch(() => ({}));
+
+        if (!result.ok || data.success !== true) {
+          status.style.color = "#b91c1c";
+          status.textContent = "Sign-in verification failed. Check the Cloudflare Worker and Google Client ID settings.";
+          return;
+        }
+
+        status.style.color = "#166534";
+        if (data.admin === true && data.role === "admin") {
+          status.textContent = "Google account verified for Admin: " + data.email + ". Note: secure Admin session/access protection is not yet implemented.";
+        } else {
+          status.textContent = "Google account verified: " + data.email + ". Standard user only; no paid access was granted.";
+        }
+      } catch (error) {
+        status.style.color = "#b91c1c";
+        status.textContent = "Could not contact the OfficialPen login server. Check your connection and Worker deployment.";
+      }
+    }
+  });
+
+  container.innerHTML = "";
+  google.accounts.id.renderButton(container, {
+    type: "standard",
+    theme: "outline",
+    size: "large",
+    text: "signin_with",
+    shape: "rectangular",
+    logo_alignment: "left"
+  });
+  status.textContent = "";
+}
+
+// Handle both cases: GIS script loads before or after this code.
+window.addEventListener("load", function() {
+  if (window.google && google.accounts && google.accounts.id) {
+    initializeOfficialPenGoogleSignIn();
+  } else {
+    const status = document.getElementById("googleSignInStatus");
+    if (status) status.textContent = "Loading Google Sign-In…";
+    let tries = 0;
+    const timer = window.setInterval(function() {
+      tries++;
+      if (window.google && google.accounts && google.accounts.id) {
+        window.clearInterval(timer);
+        initializeOfficialPenGoogleSignIn();
+      } else if (tries >= 30) {
+        window.clearInterval(timer);
+        if (status) status.textContent = "Google Sign-In did not load. Check internet access and refresh.";
+      }
+    }, 300);
+  }
+});
+</script>
+<script src="https://accounts.google.com/gsi/client" async defer></script>
+</body></html>
