@@ -543,7 +543,59 @@ function resetForm(){if(!window.confirm('Reset the entire TA Bill and Tour Diary
    document.addEventListener('click',function(event){if(!servicesMenu.contains(event.target)){servicesMenu.classList.remove('open');menuButton.setAttribute('aria-expanded','false');}});
  }
  function showPortal(){app.style.display='block';portal.style.display='block';workspace.style.display='none';document.body.classList.remove('demo-mode');document.getElementById('demoAccessBanner').style.display='none';document.title='OfficialPen — Home';window.scrollTo(0,0);}
- function enterSoftware(demo){app.style.display='block';portal.style.display='none';workspace.style.display='block';document.body.classList.toggle('demo-mode',!!demo);document.getElementById('demoAccessBanner').style.display=demo?'block':'none';document.title=demo?'OfficialPen HPTR-7 — Limited Demo':'OfficialPen HPTR-7 Software';if(demo){document.getElementById('sendEmailPdf').title='Email PDF is available only in paid access';document.querySelector('.print-form').title='Print/PDF is available only in paid access';}window.scrollTo(0,0);}
+ easync function enterSoftware(demo) {
+    let isAdmin = false;
+
+    const sessionToken = sessionStorage.getItem("officialpen_session");
+
+    if (sessionToken) {
+        try {
+            const response = await fetch(
+                OFFICIALPEN_AUTH_API.replace("/auth/google", "/auth/me"),
+                {
+                    method: "GET",
+                    headers: {
+                        "Authorization": "Bearer " + sessionToken
+                    }
+                }
+            );
+
+            const account = await response.json();
+
+            isAdmin =
+                response.ok &&
+                account.success === true &&
+                account.role === "admin" &&
+                account.email.toLowerCase() ===
+                "thakursatyaraj1996@gmail.com";
+        } catch (error) {
+            isAdmin = false;
+        }
+    }
+
+   const limitedDemo = !isAdmin;
+
+    app.style.display = "block";
+    portal.style.display = "none";
+    workspace.style.display = "block";
+
+    document.body.classList.toggle("demo-mode", limitedDemo);
+
+    document.getElementById("demoAccessBanner").style.display =
+        limitedDemo ? "block" : "none";
+
+    document.title = limitedDemo
+        ? "OfficialPen HPTR-7 — Limited Demo"
+        : "OfficialPen HPTR-7 Software";
+
+    document.getElementById("sendEmailPdf").title =
+        limitedDemo ? "Email PDF is available only in paid access" : "";
+
+    document.querySelector(".print-form").title =
+        limitedDemo ? "Print/PDF is available only in paid access" : "";
+
+    window.scrollTo(0, 0);
+}
  document.querySelectorAll('.portal-hero-actions a[href="#portalDemo"], .portal-submenu a[href="#portalDemo"]').forEach(function(el){el.addEventListener('click',function(e){e.preventDefault();servicesMenu?.classList.remove('open');enterSoftware(true);});});
  document.getElementById('portalLaunchDemo')?.addEventListener('click',function(){enterSoftware(true);});
  document.querySelectorAll('[data-open-software],#portalOpenSoftware,#portalLaunchHero').forEach(function(el){el.addEventListener('click',function(e){e.preventDefault();enterSoftware(false);});});
