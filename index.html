@@ -656,15 +656,36 @@ if (!data.sessionToken) {
 }
 
 sessionStorage.setItem(
-  "officialpen_session",
-  data.sessionToken
+    "officialpen_session",
+    data.sessionToken
 );
-        status.style.color = "#166534";
-        if (data.admin === true && data.role === "admin") {
-          status.textContent = "Google account verified for Admin: " + data.email + ". Note: secure Admin session/access protection is not yet implemented.";
-        } else {
-          status.textContent = "Google account verified: " + data.email + ". Standard user only; no paid access was granted.";
+
+const checkSession = await fetch(
+    OFFICIALPEN_AUTH_API.replace("/auth/google", "/auth/me"),
+    {
+        method: "GET",
+        headers: {
+            "Authorization": "Bearer " + data.sessionToken
         }
+    }
+);
+
+const sessionData = await checkSession.json();
+
+if (!checkSession.ok || sessionData.success !== true) {
+    sessionStorage.removeItem("officialpen_session");
+    status.style.color = "#b91c1c";
+    status.textContent = "Session verification failed. Please login again.";
+    return;
+}
+
+status.style.color = "#166534";
+
+if (sessionData.role === "admin") {
+    status.textContent = "Admin Login Successful: " + sessionData.email;
+} else {
+    status.textContent = "Standard User Login Successful: " + sessionData.email;
+}
       } catch (error) {
         status.style.color = "#b91c1c";
         status.textContent = "Could not contact the OfficialPen login server. Check your connection and Worker deployment.";
