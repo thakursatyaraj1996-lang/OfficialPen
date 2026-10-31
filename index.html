@@ -649,7 +649,16 @@ function initializeOfficialPenGoogleSignIn() {
           status.textContent = "Sign-in verification failed. Check the Cloudflare Worker and Google Client ID settings.";
           return;
         }
+if (!data.sessionToken) {
+  status.style.color = "#b91c1c";
+  status.textContent = "Secure session not received. Please login again.";
+  return;
+}
 
+sessionStorage.setItem(
+  "officialpen_session",
+  data.sessionToken
+);
         status.style.color = "#166534";
         if (data.admin === true && data.role === "admin") {
           status.textContent = "Google account verified for Admin: " + data.email + ". Note: secure Admin session/access protection is not yet implemented.";
