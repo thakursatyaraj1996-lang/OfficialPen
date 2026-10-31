@@ -542,13 +542,7 @@ function resetForm(){if(!window.confirm('Reset the entire TA Bill and Tour Diary
    servicesMenu.querySelectorAll('.portal-submenu a').forEach(function(link){link.addEventListener('click',function(){servicesMenu.classList.remove('open');menuButton.setAttribute('aria-expanded','false');});});
    document.addEventListener('click',function(event){if(!servicesMenu.contains(event.target)){servicesMenu.classList.remove('open');menuButton.setAttribute('aria-expanded','false');}});
  }
-function showPortal() {
-  app.style.display = "block";
-  portal.style.display = "block";
-  workspace.style.display = "none";
-  document.body.classList.remove("demo-mode");
-  document.getElementById("demoAccessBanner").style.display = "none";
-  document.title = "OfficialPen - Home";
+function showPortal() {app.style.display = "block";portal.style.display = "block";workspace.style.display = "none";document.body.classList.remove("demo-mode");document.getElementById("demoAccessBanner").style.display = "none";document.title = "OfficialPen - Home";
 }
  easync function enterSoftware(demo) {
     let isAdmin = false;
